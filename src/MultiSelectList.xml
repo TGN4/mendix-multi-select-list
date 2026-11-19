@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="conclusion.multiselectlist.MultiSelectList" pluginWidget="true" needsEntityContext="true" offlineCapable="true"
+    supportedPlatform="Web"
+    xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+    <name>Multi-select list</name>
+    <description>Selectable list (checkboxes or chips) for many-to-many relations: a reference set, or a junction entity handled through actions.</description>
+    <studioProCategory>Input elements</studioProCategory>
+    <studioCategory>Input Elements</studioCategory>
+    <helpUrl>https://github.com/TGN4/mendix-multi-select-list#readme</helpUrl>
+    <properties>
+        <propertyGroup caption="General">
+            <propertyGroup caption="Data source">
+                <property key="selectionMode" type="enumeration" defaultValue="referenceSet">
+                    <caption>Relation type</caption>
+                    <description>Reference set: the widget writes the many-to-many association of the context object directly. Junction entity: the widget calls 'On select' / 'On deselect' per object, which create or delete the junction object.</description>
+                    <enumerationValues>
+                        <enumerationValue key="referenceSet">Reference set (many-to-many)</enumerationValue>
+                        <enumerationValue key="junction">Junction entity (via actions)</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="options" type="datasource" isList="true" required="true">
+                    <caption>Selectable objects</caption>
+                    <description>All objects the user can choose from. Sorting and constraints are set here.</description>
+                </property>
+                <property key="optionCaption" type="textTemplate" dataSource="options" required="true">
+                    <caption>Caption</caption>
+                    <description>Text shown for each selectable object.</description>
+                </property>
+                <property key="referenceSet" type="association" selectableObjects="options" required="false">
+                    <caption>Reference set</caption>
+                    <description>Reference set mode: the many-to-many association on the context object that holds the selection.</description>
+                    <associationTypes>
+                        <associationType name="ReferenceSet" />
+                    </associationTypes>
+                </property>
+                <property key="selectedOptions" type="datasource" isList="true" required="false">
+                    <caption>Selected objects</caption>
+                    <description>Junction mode: the objects that are currently selected, of the same entity as 'Selectable objects'. Usually an XPath through the junction entity, e.g. [Module.Junction_Option/Module.Junction/Module.Junction_Context = '[%CurrentObject%]'].</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Display">
+                <property key="displayStyle" type="enumeration" defaultValue="checkboxes">
+                    <caption>Display style</caption>
+                    <description />
+                    <enumerationValues>
+                        <enumerationValue key="checkboxes">Checkbox list</enumerationValue>
+                        <enumerationValue key="chips">Chips</enumerationValue>
+                    </enumerationValues>
+                </property>
+                <property key="columns" type="integer" defaultValue="1">
+                    <caption>Columns</caption>
+                    <description>Number of columns for the checkbox list (1-6). On small screens the list falls back to one column.</description>
+                </property>
+                <property key="emptyText" type="textTemplate" required="false">
+                    <caption>Empty list text</caption>
+                    <description>Shown when there are no selectable objects.</description>
+                    <translations>
+                        <translation lang="en_US">No items available</translation>
+                        <translation lang="nl_NL">Geen items beschikbaar</translation>
+                    </translations>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Search">
+                <property key="showSearch" type="boolean" defaultValue="false">
+                    <caption>Show search field</caption>
+                    <description>Filters the list on the caption (client side).</description>
+                </property>
+                <property key="searchPlaceholder" type="textTemplate" required="false">
+                    <caption>Placeholder</caption>
+                    <description />
+                    <translations>
+                        <translation lang="en_US">Search...</translation>
+                        <translation lang="nl_NL">Zoeken...</translation>
+                    </translations>
+                </property>
+                <property key="noResultsText" type="textTemplate" required="false">
+                    <caption>No results text</caption>
+                    <description>Shown when the search matches nothing.</description>
+                    <translations>
+                        <translation lang="en_US">No results</translation>
+                        <translation lang="nl_NL">Geen resultaten</translation>
+                    </translations>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Select all">
+                <property key="showSelectAll" type="boolean" defaultValue="false">
+                    <caption>Show select all / clear all</caption>
+                    <description>When a search is active, only the visible objects are (de)selected.</description>
+                </property>
+                <property key="selectAllCaption" type="textTemplate" required="false">
+                    <caption>Select all caption</caption>
+                    <description />
+                    <translations>
+                        <translation lang="en_US">Select all</translation>
+                        <translation lang="nl_NL">Alles selecteren</translation>
+                    </translations>
+                </property>
+                <property key="clearAllCaption" type="textTemplate" required="false">
+                    <caption>Clear all caption</caption>
+                    <description />
+                    <translations>
+                        <translation lang="en_US">Clear all</translation>
+                        <translation lang="nl_NL">Alles wissen</translation>
+                    </translations>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Editability">
+                <systemProperty key="Editability" />
+                <property key="readOnlyCondition" type="expression" required="false">
+                    <caption>Read-only condition</caption>
+                    <description>Optional. When true the list is shown but cannot be changed (works in both modes).</description>
+                    <returnType type="Boolean" />
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Accessibility">
+                <property key="ariaLabel" type="textTemplate" required="false">
+                    <caption>Aria label</caption>
+                    <description>Name of the list for screen readers, when no label is shown.</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Events">
+            <propertyGroup caption="Per object">
+                <property key="onSelect" type="action" dataSource="options" required="false">
+                    <caption>On select</caption>
+                    <description>Called with the selected object. Junction mode: create and commit the junction object here. Reference set mode: optional, runs after the association is set.</description>
+                </property>
+                <property key="onDeselect" type="action" dataSource="options" required="false">
+                    <caption>On deselect</caption>
+                    <description>Called with the deselected object. Junction mode: delete the junction object here. Reference set mode: optional, runs after the association is set.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Bulk (junction mode)">
+                <property key="onSelectAll" type="action" required="false">
+                    <caption>On select all</caption>
+                    <description>Optional. Selects all objects in one call. Without it, 'select all' calls 'On select' once per object.</description>
+                </property>
+                <property key="onClearAll" type="action" required="false">
+                    <caption>On clear all</caption>
+                    <description>Optional. Deselects all objects in one call. Without it, 'clear all' calls 'On deselect' once per object.</description>
+                </property>
+            </propertyGroup>
+            <propertyGroup caption="Change">
+                <property key="onChange" type="action" required="false">
+                    <caption>On change</caption>
+                    <description>Called once after every change of the selection (both modes).</description>
+                </property>
+            </propertyGroup>
+        </propertyGroup>
+        <propertyGroup caption="Common">
+            <systemProperty key="Name" />
+            <systemProperty key="TabIndex" />
+        </propertyGroup>
+        <propertyGroup caption="Label">
+            <systemProperty key="Label" />
+        </propertyGroup>
+        <propertyGroup caption="Visibility">
+            <systemProperty key="Visibility" />
+        </propertyGroup>
+    </properties>
+</widget>

@@ -1,0 +1,125 @@
+// Uses Atlas variables when present, with neutral fallbacks so the widget also works without Atlas.
+.widget-multiselectlist {
+    --msl-gap: 8px;
+    --msl-accent: var(--brand-primary, #264ae5);
+    --msl-accent-contrast: #fff;
+    --msl-border: var(--border-color-default, #ced0d3);
+    --msl-muted: var(--font-color-detail, #6c717e);
+    --msl-radius: var(--border-radius-default, 4px);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--msl-gap);
+
+    &__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--msl-gap);
+    }
+
+    &__search {
+        flex: 1 1 200px;
+        min-width: 0;
+    }
+
+    &__bulk {
+        display: flex;
+        gap: 4px;
+
+        .btn-link {
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+    }
+
+    &__checkboxes {
+        display: grid;
+        grid-template-columns: repeat(var(--msl-columns, 1), minmax(0, 1fr));
+        gap: 4px var(--msl-gap);
+
+        @media (max-width: 576px) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__option {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+
+        input[type="checkbox"] {
+            flex: 0 0 auto;
+            margin: 3px 0 0;
+            cursor: pointer;
+        }
+
+        label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+            overflow-wrap: anywhere;
+        }
+
+        &--disabled {
+            input[type="checkbox"],
+            label {
+                cursor: default;
+            }
+
+            label {
+                color: var(--msl-muted);
+            }
+        }
+    }
+
+    &__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--msl-gap);
+    }
+
+    &__chip {
+        border: 1px solid var(--msl-border);
+        border-radius: 999px;
+        background: transparent;
+        color: inherit;
+        padding: 4px 12px;
+        line-height: 1.4;
+        cursor: pointer;
+        transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+
+        &:hover:not(:disabled) {
+            border-color: var(--msl-accent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--msl-accent);
+            outline-offset: 2px;
+        }
+
+        &--selected {
+            background: var(--msl-accent);
+            border-color: var(--msl-accent);
+            color: var(--msl-accent-contrast);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.6;
+        }
+    }
+
+    &__message {
+        color: var(--msl-muted);
+        font-style: italic;
+    }
+
+    &__loading {
+        min-height: 24px;
+    }
+
+    &--busy {
+        cursor: progress;
+    }
+}
