@@ -29,7 +29,8 @@ Put the widget inside a data view (or list view or data grid) of the **context**
 | Caption | e.g. `{Name}` |
 | Reference set | The `Context_Option` reference set |
 
-Optional: **On select / On deselect** (per clicked object) and **On change** (once per change) for side effects.
+Optional: **On select / On deselect** (per changed object, also for select all / clear all) and **On change**
+(once, after them) for side effects. All actions run one after another.
 The object is changed, not committed: save it with your normal Save button or in On change.
 
 ### Mode 2 — Junction entity
@@ -53,6 +54,12 @@ Notes:
   at once and reloads *Selected objects* when the last action is done. If an action fails, the checkbox returns to
   the real state after the reload.
 - Pass the context object to the action as a second parameter (Studio Pro maps it from the surrounding data view).
+- Make the actions **idempotent**: On select only creates a junction object when none exists for this option and
+  context, On deselect deletes whatever exists. That keeps the data right even after a double click or a slow network.
+- The list is locked until *Selected objects* has loaded, so a click can never act on a stale selection.
+- When the widget is removed while actions are still queued (popup closed, page left), the remaining actions are
+  started at once. With *Disallow concurrent execution* on those microflows some could be refused: for popups, prefer
+  *On select all* / *On clear all* for bulk changes, or switch that setting off for idempotent create/delete flows.
 - **Select all / Clear all**: configure *On select all* / *On clear all* for one call, otherwise the widget calls
   *On select* / *On deselect* per object. With an active search only the visible objects are (de)selected.
 - Commit inside the actions (or handle a "draft" yourself): a junction object is its own object, it is not saved
@@ -60,8 +67,9 @@ Notes:
 
 ### Read-only
 
-- The widget follows the *Editability* setting and the **Read-only condition** expression (e.g. `$currentObject/Status != 'Draft'`).
-- Reference set mode also follows the entity access of the reference set.
+- **Read-only condition** (expression, e.g. `$currentObject/Status != 'Draft'`) works in both modes.
+- *Editable* (Editability) and entity access only apply in **reference set mode**: Mendix passes them through the
+  reference set. In junction mode use the Read-only condition.
 - Junction mode disables an option when its action cannot run (no action configured or no access to it).
 
 ### Styling

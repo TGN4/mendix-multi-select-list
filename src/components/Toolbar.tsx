@@ -6,6 +6,7 @@ export interface ToolbarProps {
     onSearch: (value: string) => void;
     searchPlaceholder?: string;
     showSelectAll: boolean;
+    bulkDisabled: boolean;
     selectAllCaption?: string;
     clearAllCaption?: string;
     onSelectAll: () => void;
@@ -33,6 +34,7 @@ export function Toolbar(props: ToolbarProps): ReactElement {
                         type="button"
                         className="btn btn-link widget-multiselectlist__select-all"
                         tabIndex={props.tabIndex}
+                        disabled={props.bulkDisabled}
                         onClick={props.onSelectAll}
                     >
                         {props.selectAllCaption || "Select all"}
@@ -41,6 +43,7 @@ export function Toolbar(props: ToolbarProps): ReactElement {
                         type="button"
                         className="btn btn-link widget-multiselectlist__clear-all"
                         tabIndex={props.tabIndex}
+                        disabled={props.bulkDisabled}
                         onClick={props.onClearAll}
                     >
                         {props.clearAllCaption || "Clear all"}

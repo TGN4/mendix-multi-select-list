@@ -1,7 +1,7 @@
 {
   "name": "multiselectlist",
   "widgetName": "MultiSelectList",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generic selectable list for many-to-many relations in Mendix: a reference set, or a junction entity handled through actions.",
   "copyright": "© Conclusion Low Code Company 2026",
   "author": "Conclusion Low Code Company",

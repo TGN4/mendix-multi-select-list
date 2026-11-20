@@ -1,4 +1,4 @@
-import { CSSProperties, ReactElement, createElement } from "react";
+import { CSSProperties, ReactElement, createElement, useId } from "react";
 import { ObjectItem } from "mendix";
 import classNames from "classnames";
 
@@ -10,25 +10,36 @@ export interface OptionView {
 }
 
 export interface OptionListProps {
-    name: string;
+    /** The widget id from Mendix; the Label system property points its <label for> here. */
+    id?: string;
     views: OptionView[];
     displayStyle: "checkboxes" | "chips";
     columns: number;
     readOnly: boolean;
     ariaLabel?: string;
+    ariaLabelledBy?: string;
     tabIndex?: number;
     onToggle: (item: ObjectItem) => void;
 }
 
 export function OptionList(props: OptionListProps): ReactElement | null {
     const { views, displayStyle, readOnly, onToggle } = props;
+    // Unique per widget instance: the same option can appear in many rows of a list view or data grid.
+    const uid = useId();
     if (views.length === 0) {
         return null;
     }
 
+    const groupProps = {
+        id: props.id,
+        role: "group",
+        "aria-label": props.ariaLabel || undefined,
+        "aria-labelledby": props.ariaLabel ? undefined : props.ariaLabelledBy
+    };
+
     if (displayStyle === "chips") {
         return (
-            <div className="widget-multiselectlist__chips" role="group" aria-label={props.ariaLabel}>
+            <div className="widget-multiselectlist__chips" {...groupProps}>
                 {views.map(view => (
                     <button
                         key={view.item.id}
@@ -52,12 +63,11 @@ export function OptionList(props: OptionListProps): ReactElement | null {
     return (
         <div
             className={classNames("widget-multiselectlist__checkboxes", { "is-readonly": readOnly })}
-            role="group"
-            aria-label={props.ariaLabel}
             style={style}
+            {...groupProps}
         >
             {views.map(view => {
-                const id = `${props.name}-${view.item.id}`;
+                const inputId = `${uid}-${view.item.id}`;
                 return (
                     <div
                         key={view.item.id}
@@ -67,14 +77,14 @@ export function OptionList(props: OptionListProps): ReactElement | null {
                         })}
                     >
                         <input
-                            id={id}
+                            id={inputId}
                             type="checkbox"
                             checked={view.selected}
                             disabled={view.disabled}
                             tabIndex={props.tabIndex}
                             onChange={() => onToggle(view.item)}
                         />
-                        <label htmlFor={id}>{view.caption}</label>
+                        <label htmlFor={inputId}>{view.caption}</label>
                     </div>
                 );
             })}

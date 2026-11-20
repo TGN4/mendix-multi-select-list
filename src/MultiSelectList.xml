@@ -109,7 +109,7 @@
                 <systemProperty key="Editability" />
                 <property key="readOnlyCondition" type="expression" required="false">
                     <caption>Read-only condition</caption>
-                    <description>Optional. When true the list is shown but cannot be changed (works in both modes).</description>
+                    <description>Optional. When true the list is shown but cannot be changed. Works in both modes; in junction mode this is the only way to make the list read-only ('Editable' only applies to the reference set).</description>
                     <returnType type="Boolean" />
                 </property>
             </propertyGroup>
@@ -124,11 +124,11 @@
             <propertyGroup caption="Per object">
                 <property key="onSelect" type="action" dataSource="options" required="false">
                     <caption>On select</caption>
-                    <description>Called with the selected object. Junction mode: create and commit the junction object here. Reference set mode: optional, runs after the association is set.</description>
+                    <description>Called with the selected object. Junction mode: create and commit the junction object here. Reference set mode: optional, runs after the association is set (also for each object of select all).</description>
                 </property>
                 <property key="onDeselect" type="action" dataSource="options" required="false">
                     <caption>On deselect</caption>
-                    <description>Called with the deselected object. Junction mode: delete the junction object here. Reference set mode: optional, runs after the association is set.</description>
+                    <description>Called with the deselected object. Junction mode: delete the junction object here. Reference set mode: optional, runs after the association is set (also for each object of clear all).</description>
                 </property>
             </propertyGroup>
             <propertyGroup caption="Bulk (junction mode)">

@@ -3,7 +3,8 @@ import { ObjectItem, ValueStatus } from "mendix";
 import classNames from "classnames";
 
 import { MultiSelectListContainerProps } from "../typings/MultiSelectListProps";
-import { useJunctionQueue } from "./hooks/useJunctionQueue";
+import { useActionQueue } from "./hooks/useActionQueue";
+import { useLabelledBy } from "./hooks/useLabelledBy";
 import { OptionList, OptionView } from "./components/OptionList";
 import { Toolbar } from "./components/Toolbar";
 
@@ -28,9 +29,16 @@ export function MultiSelectList(props: Props): ReactElement {
     const isJunction = selectionMode === "junction";
     const [search, setSearch] = useState("");
 
-    const junction = useJunctionQueue({ selectedOptions, onSelect, onDeselect, onSelectAll, onClearAll, onChange });
+    const queue = useActionQueue({ options, selectedOptions, onSelect, onDeselect, onSelectAll, onClearAll, onChange });
+    const labelledBy = useLabelledBy(props.id, !props.ariaLabel?.value);
 
     const items: ObjectItem[] = useMemo(() => options.items ?? [], [options.items]);
+
+    // The selection is only trusted once its source is Available: before that every option would look unselected,
+    // and a click would create a duplicate junction object or overwrite the reference set.
+    const selectionReady = isJunction
+        ? selectedOptions?.status === ValueStatus.Available
+        : referenceSet?.status === ValueStatus.Available;
 
     const sourceSelected = useMemo(() => {
         const list = isJunction ? selectedOptions?.items : referenceSet?.value;
@@ -39,21 +47,23 @@ export function MultiSelectList(props: Props): ReactElement {
 
     const isSelected = useCallback(
         (item: ObjectItem): boolean => {
-            if (isJunction && junction.pending.has(item.id)) {
-                return junction.pending.get(item.id)!;
+            if (queue.pending.has(item.id)) {
+                return queue.pending.get(item.id)!;
             }
             return sourceSelected.has(item.id);
         },
-        [isJunction, junction.pending, sourceSelected]
+        [queue.pending, sourceSelected]
     );
 
+    // Editability only reaches the widget through the reference set; in junction mode use the Read-only condition.
     const readOnly =
         props.readOnlyCondition?.value === true ||
         (isJunction ? !onSelect && !onDeselect : !referenceSet || referenceSet.readOnly);
+    const locked = readOnly || !selectionReady;
 
     const canToggle = useCallback(
         (item: ObjectItem, select: boolean): boolean => {
-            if (readOnly) {
+            if (locked) {
                 return false;
             }
             if (!isJunction) {
@@ -62,7 +72,7 @@ export function MultiSelectList(props: Props): ReactElement {
             const action = (select ? onSelect : onDeselect)?.get(item);
             return action?.canExecute === true;
         },
-        [readOnly, isJunction, onSelect, onDeselect]
+        [locked, isJunction, onSelect, onDeselect]
     );
 
     const term = search.trim().toLowerCase();
@@ -82,21 +92,6 @@ export function MultiSelectList(props: Props): ReactElement {
         [items, isSelected, optionCaption, canToggle, term]
     );
 
-    const runAfterReferenceSetChange = useCallback(
-        (item?: ObjectItem, select?: boolean) => {
-            if (item && select !== undefined) {
-                const action = (select ? onSelect : onDeselect)?.get(item);
-                if (action?.canExecute) {
-                    action.execute();
-                }
-            }
-            if (onChange?.canExecute) {
-                onChange.execute();
-            }
-        },
-        [onSelect, onDeselect, onChange]
-    );
-
     const toggle = useCallback(
         (item: ObjectItem) => {
             const select = !isSelected(item);
@@ -104,19 +99,20 @@ export function MultiSelectList(props: Props): ReactElement {
                 return;
             }
             if (isJunction) {
-                junction.enqueueItem(item, select);
+                queue.enqueueItem(item, select, true);
                 return;
             }
-            const current = referenceSet?.value ?? [];
-            referenceSet?.setValue(select ? [...current, item] : current.filter(other => other.id !== item.id));
-            runAfterReferenceSetChange(item, select);
+            const current = referenceSet!.value ?? [];
+            referenceSet!.setValue(select ? [...current, item] : current.filter(other => other.id !== item.id));
+            queue.enqueueItem(item, select, false);
+            queue.enqueueChange();
         },
-        [isSelected, canToggle, isJunction, junction, referenceSet, runAfterReferenceSetChange]
+        [isSelected, canToggle, isJunction, queue, referenceSet]
     );
 
     const setAllVisible = useCallback(
         (select: boolean) => {
-            if (readOnly) {
+            if (locked) {
                 return;
             }
             const targets = views.filter(view => view.selected !== select && !view.disabled).map(view => view.item);
@@ -126,26 +122,29 @@ export function MultiSelectList(props: Props): ReactElement {
             if (isJunction) {
                 const bulk = select ? onSelectAll : onClearAll;
                 if (bulk && term === "") {
-                    junction.enqueueBulk(
+                    queue.enqueueBulk(
                         select,
                         targets.map(item => item.id)
                     );
                 } else {
-                    targets.forEach(item => junction.enqueueItem(item, select));
+                    targets.forEach(item => queue.enqueueItem(item, select, true));
                 }
                 return;
             }
-            const current = referenceSet?.value ?? [];
+            const current = referenceSet!.value ?? [];
             const targetIds = new Set(targets.map(item => item.id));
-            referenceSet?.setValue(
+            referenceSet!.setValue(
                 select ? [...current, ...targets] : current.filter(other => !targetIds.has(other.id))
             );
-            runAfterReferenceSetChange();
+            // Same behaviour as a single click: On select / On deselect per object, then one On change.
+            targets.forEach(item => queue.enqueueItem(item, select, false));
+            queue.enqueueChange();
         },
-        [readOnly, views, isJunction, onSelectAll, onClearAll, term, junction, referenceSet, runAfterReferenceSetChange]
+        [locked, views, isJunction, onSelectAll, onClearAll, term, queue, referenceSet]
     );
 
-    const loading = options.status === ValueStatus.Loading && options.items === undefined;
+    const selectionLoading = !selectionReady && (isJunction ? !selectedOptions?.items : !referenceSet?.value);
+    const loading = (options.status === ValueStatus.Loading && options.items === undefined) || selectionLoading;
     const validation = isJunction ? undefined : referenceSet?.validation;
     const columns = Math.min(Math.max(props.columns || 1, 1), 6);
 
@@ -160,11 +159,11 @@ export function MultiSelectList(props: Props): ReactElement {
         <div
             className={classNames("widget-multiselectlist", props.class, {
                 "widget-multiselectlist--readonly": readOnly,
-                "widget-multiselectlist--busy": junction.busy,
+                "widget-multiselectlist--busy": queue.busy || !selectionReady,
                 "has-error": !!validation
             })}
             style={props.style}
-            aria-busy={loading || junction.busy}
+            aria-busy={loading || queue.busy}
         >
             {(props.showSearch || props.showSelectAll) && items.length > 0 && (
                 <Toolbar
@@ -173,6 +172,7 @@ export function MultiSelectList(props: Props): ReactElement {
                     onSearch={setSearch}
                     searchPlaceholder={props.searchPlaceholder?.value}
                     showSelectAll={props.showSelectAll && !readOnly}
+                    bulkDisabled={locked}
                     selectAllCaption={props.selectAllCaption?.value}
                     clearAllCaption={props.clearAllCaption?.value}
                     onSelectAll={() => setAllVisible(true)}
@@ -184,12 +184,13 @@ export function MultiSelectList(props: Props): ReactElement {
                 <div className="widget-multiselectlist__loading" />
             ) : (
                 <OptionList
-                    name={props.name}
+                    id={props.id}
                     views={views}
                     displayStyle={props.displayStyle}
                     columns={columns}
                     readOnly={readOnly}
                     ariaLabel={props.ariaLabel?.value}
+                    ariaLabelledBy={labelledBy}
                     tabIndex={props.tabIndex}
                     onToggle={toggle}
                 />
