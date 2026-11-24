@@ -7,7 +7,7 @@
     <description>Selectable list (checkboxes or chips) for many-to-many relations: a reference set, or a junction entity handled through actions.</description>
     <studioProCategory>Input elements</studioProCategory>
     <studioCategory>Input Elements</studioCategory>
-    <helpUrl>https://github.com/TGN4/mendix-multi-select-list#readme</helpUrl>
+    <helpUrl>https://github.com/TGN4/mendix-multi-select-list/blob/main/README.md</helpUrl>
     <properties>
         <propertyGroup caption="General">
             <propertyGroup caption="Data source">
